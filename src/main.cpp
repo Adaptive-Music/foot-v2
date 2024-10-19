@@ -12,13 +12,9 @@ void setup() {
 
 void loop() {
   for (int i = 0; i < 10; i++) {
-    uint8_t touchReading = touchRead(pins[i]);
-    Serial.print(i);
-    Serial.print(": ");
-    Serial.print(touchReading);
-    Serial.print(", ");
+    Serial.printf("%d(%d): %d, ", i, pins[i], touchRead(pins[i]));
   }
-  Serial.println("\n");
+  Serial.println();
   delay(1000);
 }
 
