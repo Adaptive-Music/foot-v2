@@ -1,5 +1,7 @@
 #include <Arduino.h>
+#include <BLEMidi.h>
 
+// Touch sensor pins
 int pins[] = {4, 0, 2, 15, 13, 12, 14, 27, 33, 32};
 
 void setup() {
