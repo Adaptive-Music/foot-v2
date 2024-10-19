@@ -12,9 +12,9 @@ void setup() {
 
 void loop() {
   for (int i = 0; i < 10; i++) {
-    Serial.printf("%d(%d): %d, ", i, pins[i], touchRead(pins[i]));
+    Serial.printf("%d(%d): %03d, ", i, pins[i], touchRead(pins[i]));
   }
   Serial.println();
-  delay(1000);
+  delay(200);
 }
 
