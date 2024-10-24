@@ -2,7 +2,7 @@
 #include <BLEMidi.h>
 
 // GPIO pins to use for 8 touch pads
-int pins[] = {T4, T5, T6, T7, T8, T0, T2, T3};
+int pins[] = {T6, T4, T5, T8, T7, T3, T0, T2};
 
 // Arrays to store sensor states
 bool oldState[8] = {false};
@@ -14,7 +14,7 @@ int majorScale[8] = {60, 62, 64, 65, 67, 69, 71, 72};
 bool drumMode = false;
 
 // Touch reading threshold below which touchRead value means sensor is touched
-const int threshold = 27;
+const int threshold = 21;
 
 
 
