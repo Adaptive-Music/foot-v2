@@ -141,7 +141,10 @@ void changeKey(int newKey) {
 
 
 void changeScale() {
-  if (currentMode == DRUM_MODE) return;
+  if (currentMode == DRUM_MODE) {
+    changeKey(60);
+    return;
+    }
   // Cycle through scale options
   currentScale = (currentScale + 1) % (sizeof(scales) / sizeof(scales[0]));
   if (currentScale == PENTATONIC && currentMode==TRIAD_CHORD) {
@@ -162,13 +165,16 @@ void changeMode() {
 
 void buttonAction() {
   unsigned long startTime = millis();
-  delay(50);
-  while (touchRead(pins[8]) < thresholds[8]) {
+  long elapsedTime = 0;
+  while (elapsedTime < 500) {
+    if (touchRead(pins[8]) > thresholds[8]) {
+      changeMode();
+      return;
+    }
     delay(50);
+    elapsedTime = millis() - startTime;
   }
-  long elapsedTime = millis() - startTime;
-  if (elapsedTime > 500) changeScale();
-  else changeMode();
+  changeScale();
 }
 
 void setup() {
