@@ -2,7 +2,14 @@
 #include <BLEMidi.h>
 
 // GPIO pins to use for 8 touch pads
-int pins[] = {T6, T4, T5, T8, T7, T3, T0, T2};
+int pins[] = {T6, T4, T5, T7, T8, T3, T2, T9};
+
+// Touch reading thresholds below which touchRead value means sensor is touched
+int thresholds[] = {27, 29, 33, 28, 27, 24, 24, 30};
+
+// Button for mode change
+int buttonPin = T0;
+int buttonThreshold = 52;
 
 // Arrays to store sensor states
 bool oldState[8] = {false};
@@ -13,11 +20,6 @@ int defaultDrum[8] = {36, 38, 37, 43, 45, 42, 46, 49};
 int majorScale[8] = {60, 62, 64, 65, 67, 69, 71, 72};
 bool drumMode = false;
 
-// Touch reading threshold below which touchRead value means sensor is touched
-const int threshold = 21;
-
-
-
 
 void setup() {
   Serial.begin(115200);
@@ -25,9 +27,10 @@ void setup() {
 }
 
 void loop() {
+  if 
 
    // Read and store the current state of the pushbutton values
-  for (int i = 0; i < 8; i++) newState[i] = touchRead(pins[i]) < threshold;
+  for (int i = 0; i < 8; i++) newState[i] = touchRead(pins[i]) < thresholds[i];
 
   for (int i = 0; i < 8; i++) {
     // No action required if sensor unchanged
