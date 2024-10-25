@@ -69,6 +69,8 @@ void silence() {
 }
 
 void playOrEndNotes(int i, bool noteOn) {
+  if (!BLEMidiServer.isConnected()) return;
+
   notes.clear();
   int rootNote = key + scales[currentScale][i];
 
@@ -130,6 +132,15 @@ void playArpeggio() {
   }
 }
 
+void changeKey(int newKey) {
+  // Check if key within valid range
+  if (newKey < 12 || newKey > 110) return;
+  // Store the new key
+  key = newKey;
+  // Play arpeggio to indicate success
+  playArpeggio();
+}
+
 void changeScale() {
   // Cycle through scale options
   currentScale = (currentScale + 1) % (sizeof(scales) / sizeof(scales[0]));
@@ -138,7 +149,6 @@ void changeScale() {
   }
   playArpeggio();  
 }
-
 
 void changeMode() {
   currentMode = (currentScale == PENTATONIC) && (currentMode == SINGLE_NOTE) ? POWER_CHORD : (currentMode + 1) % NUM_MODES;  Serial.printf("New mode: %d\n", currentMode);
@@ -172,14 +182,27 @@ void loop() {
    // Read and store the current state of the pushbutton values
   for (int i = 0; i < 8; i++) newState[i] = touchRead(pins[i]) < thresholds[i];
 
-  for (int i = 0; i < 8; i++) {
-    // No action required if sensor unchanged
-    if (oldState[i] == newState[i]) continue;
-    // Update oldState with changed value
-    oldState[i] = newState[i];
-    if (!BLEMidiServer.isConnected()) continue;
-    // Play/end note if pressed/released
-    playOrEndNotes(i, newState[i]);
+  // Check for key/scale/mode change combo button presses
+  // Cycle through scales
+  // Top four buttons - raise key by semitone
+  if (newState[4] && newState[5] && newState[6] && newState[7]) changeKey(key + 12);
+  // Raise key by semitone
+  else if (newState[5] && newState[6] && newState[7]) changeKey(key + 1);
+  // Bottom four buttons - lower key by octave
+  else if (newState[0] && newState[1] && newState[2] && newState[3]) changeKey(key - 12);
+  // Lower key by semitone
+  else if (newState[0] && newState[1] && newState[2]) changeKey(key - 1);
+
+
+  else {
+    for (int i = 0; i < 8; i++) {
+      // No action required if sensor unchanged
+      if (oldState[i] == newState[i]) continue;
+      // Update oldState with changed value
+      oldState[i] = newState[i];
+      // Play/end note if pressed/released
+      playOrEndNotes(i, newState[i]);
+    }
   }
   // Delay for debouncing
   delay(10);
