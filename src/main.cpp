@@ -2,13 +2,13 @@
 #include <vector>
 #include <BLEMidi.h>
 
-// GPIO pins to use for 8 touch pads
+// GPIO pins to use for 8 touch pad keys
 int pins[] = {T6, T4, T5, T7, T8, T3, T2, T9};
 
-// Touch reading thresholds below which touchRead value means sensor is touched
+// Touch reading thresholds for each key
 int thresholds[] = {27, 31, 33, 28, 27, 24, 24, 30};
 
-// Button for mode change
+// Touch button for mode/scale change
 int buttonPin = T0;
 int buttonThreshold = 52;
 
@@ -21,7 +21,6 @@ int key = 60;
 
 // Define notes to play in drum mode
 int drums[] = {36, 38, 37, 43, 45, 42, 46, 49}; 
-
 
 // Define notes to be played by each button - numbers represent how many semitones above tonic.
 int scales[][8] = {
@@ -38,7 +37,6 @@ const int PENTATONIC = 2;
 // Currently selected scale
 int currentScale = MAJOR;
 
-
 // Constants to define modes
 const int DRUM_MODE = 0;
 const int SINGLE_NOTE = 1;
@@ -47,6 +45,7 @@ const int POWER_CHORD = 3;
 
 const int NUM_MODES = 4;
 
+// Define current mode
 int currentMode = DRUM_MODE;
 
 // Define arpeggio notes for each scale
@@ -68,9 +67,9 @@ void silence() {
   }
 }
 
+
 void playOrEndNotes(int i, bool noteOn) {
   if (!BLEMidiServer.isConnected()) return;
-
   notes.clear();
   int rootNote = key + scales[currentScale][i];
 
@@ -105,6 +104,7 @@ void playOrEndNotes(int i, bool noteOn) {
   } 
 }
 
+
 void playArpeggio() {
   // Play arpeggiated chord to indicate change of key or scale
 
@@ -132,16 +132,20 @@ void playArpeggio() {
   }
 }
 
+
 void changeKey(int newKey) {
   // Check if key within valid range
   if (newKey < 12 || newKey > 110) return;
   // Store the new key
-  key = newKey;
+  if (currentMode == DRUM_MODE) key = 60;
+  else key = newKey;
   // Play arpeggio to indicate success
   playArpeggio();
 }
 
+
 void changeScale() {
+  if (currentMode == DRUM_MODE) return;
   // Cycle through scale options
   currentScale = (currentScale + 1) % (sizeof(scales) / sizeof(scales[0]));
   if (currentScale == PENTATONIC && currentMode==TRIAD_CHORD) {
@@ -150,12 +154,15 @@ void changeScale() {
   playArpeggio();  
 }
 
+
 void changeMode() {
-  currentMode = (currentScale == PENTATONIC) && (currentMode == SINGLE_NOTE) ? POWER_CHORD : (currentMode + 1) % NUM_MODES;  Serial.printf("New mode: %d\n", currentMode);
+  currentMode = (currentScale == PENTATONIC) && (currentMode == SINGLE_NOTE) ? POWER_CHORD : (currentMode + 1) % NUM_MODES;
+  Serial.printf("New mode: %d\n", currentMode);
   silence();
   playOrEndNotes(0, true);
   delay(1000);
   playOrEndNotes(0, false);}
+
 
 void buttonAction() {
   unsigned long startTime = millis();
@@ -172,6 +179,7 @@ void setup() {
   Serial.begin(115200);
   BLEMidiServer.begin("Zoe's foot keyboard");
 }
+
 
 void loop() {
   if (touchRead(buttonPin) < buttonThreshold) {
