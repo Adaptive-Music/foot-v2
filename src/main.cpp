@@ -45,11 +45,16 @@ const int SINGLE_NOTE = 1;
 const int TRIAD_CHORD = 2;
 const int POWER_CHORD = 3;
 
-
 const int NUM_MODES = 4;
 
 int currentMode = DRUM_MODE;
 
+// Define arpeggio notes for each scale
+int arpeggioNotes[][6] = {
+  {-12, 0, 4, 7, 12, 16},     // Major
+  {-12, 0, 3, 7, 12, 15},     // Minor
+  {-12, 0, 3, 7, 10, 15},     // Pentatonic - Minor 7th
+};
 
 // Vector to store chord's notes for playing/ending
 std::vector<int> notes;
@@ -98,13 +103,60 @@ void playOrEndNotes(int i, bool noteOn) {
   } 
 }
 
+void playArpeggio() {
+  // Play arpeggiated chord to indicate change of key or scale
+
+  int totalDuration = 1000;
+  int noteDuration = 70;
+  int timeElapsed = 0;
+
+  silence();
+
+  // Play notes of the chord, with short pause between each
+  for (int i : arpeggioNotes[currentScale]) {
+    int note = key + i;
+    BLEMidiServer.noteOn(0, note, 127);
+    delay(noteDuration);
+    timeElapsed += noteDuration;
+  }
+
+  // Pause until total duration elapsed
+  delay(totalDuration - timeElapsed);
+
+  // End all chord notes
+  for (int i : arpeggioNotes[currentScale]) {
+    int note = key + i;
+    BLEMidiServer.noteOff(0, note, 0);
+  }
+}
+
+void changeScale() {
+  // Cycle through scale options
+  currentScale = (currentScale + 1) % (sizeof(scales) / sizeof(scales[0]));
+  if (currentScale == PENTATONIC && currentMode==TRIAD_CHORD) {
+    currentMode = SINGLE_NOTE;
+  }
+  playArpeggio();  
+}
+
+
 void changeMode() {
-  currentMode = (currentMode + 1) % NUM_MODES;
-  Serial.printf("New mode: %d\n", currentMode);
+  currentMode = (currentScale == PENTATONIC) && (currentMode == SINGLE_NOTE) ? POWER_CHORD : (currentMode + 1) % NUM_MODES;  Serial.printf("New mode: %d\n", currentMode);
   silence();
   playOrEndNotes(0, true);
   delay(1000);
   playOrEndNotes(0, false);}
+
+void buttonAction() {
+  unsigned long startTime = millis();
+  delay(50);
+  while (touchRead(buttonPin) < buttonThreshold) {
+    delay(50);
+  }
+  long elapsedTime = millis() - startTime;
+  if (elapsedTime > 500) changeScale();
+  else changeMode();
+}
 
 void setup() {
   Serial.begin(115200);
@@ -113,7 +165,7 @@ void setup() {
 
 void loop() {
   if (touchRead(buttonPin) < buttonThreshold) {
-    changeMode();
+    buttonAction();
     return;
   }
 
