@@ -3,14 +3,10 @@
 #include <BLEMidi.h>
 
 // GPIO pins to use for 8 touch pad keys
-int pins[] = {T6, T4, T5, T7, T8, T3, T2, T9};
+int pins[] = {T6, T4, T5, T7, T8, T3, T2, T9, T0};
 
 // Touch reading thresholds for each key
-int thresholds[] = {27, 31, 33, 28, 27, 24, 24, 30};
-
-// Touch button for mode/scale change
-int buttonPin = T0;
-int buttonThreshold = 52;
+int thresholds[9] = {127, 127, 127, 127, 127, 127, 127, 127, 127};
 
 // Arrays to store sensor states
 bool oldState[8] = {false};
@@ -167,7 +163,7 @@ void changeMode() {
 void buttonAction() {
   unsigned long startTime = millis();
   delay(50);
-  while (touchRead(buttonPin) < buttonThreshold) {
+  while (touchRead(pins[8]) < thresholds[8]) {
     delay(50);
   }
   long elapsedTime = millis() - startTime;
@@ -176,13 +172,25 @@ void buttonAction() {
 }
 
 void setup() {
+  // Calibrate touch sensors
+  unsigned long startTime = millis();
+  long elapsedTime = 0;
+  while (elapsedTime < 1000) {
+    for (int i = 0; i < 9; i++) {
+      int newThreshold = touchRead(pins[i]) - 3;
+      if (newThreshold < thresholds[i]) thresholds[i] = newThreshold;
+    }
+    elapsedTime = millis() - startTime;
+  }
+
   Serial.begin(115200);
   BLEMidiServer.begin("Zoe's foot keyboard");
 }
 
 
 void loop() {
-  if (touchRead(buttonPin) < buttonThreshold) {
+  // Action mode/scale change button if pressed
+  if (touchRead(pins[8]) < thresholds[8]) {
     buttonAction();
     return;
   }
