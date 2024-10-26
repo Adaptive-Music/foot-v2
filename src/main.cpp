@@ -183,7 +183,7 @@ void setup() {
   long elapsedTime = 0;
   while (elapsedTime < 1000) {
     for (int i = 0; i < 9; i++) {
-      int newThreshold = touchRead(pins[i]) - 3;
+      int newThreshold = touchRead(pins[i]) * .9;
       if (newThreshold < thresholds[i]) thresholds[i] = newThreshold;
     }
     elapsedTime = millis() - startTime;
@@ -227,6 +227,6 @@ void loop() {
     }
   }
   // Delay for debouncing
-  delay(10);
+  delay(20);
 }
 
