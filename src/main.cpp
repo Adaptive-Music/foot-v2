@@ -2,15 +2,22 @@
 #include <vector>
 #include <BLEMidi.h>
 
-// GPIO pins to use for 8 touch pad keys
+// GPIO pins to use for capacitive touch sensors - final pin is for mode button
 int pins[] = {T6, T4, T5, T7, T8, T3, T2, T9, T0};
 
-// Touch reading thresholds for each key
+// Touch reading thresholds for each sensor
 int thresholds[9] = {127, 127, 127, 127, 127, 127, 127, 127, 127};
 
+// Sensitivity used to determine thresholds of sensor by multiplying by minimum ambient reading
+const float sensitivity = 0.9f;
+
 // Arrays to store sensor states
-bool oldState[8] = {false};
-bool newState[8] = {false};
+bool oldState[9] = {false};
+bool newState[9] = {false};
+
+// Vars for smoothing on touch input values
+const float alpha = 0.2; // Smoothing factor, between 0 (smoothest) and 1 (sharp changes)
+float smoothedReading[9] = {127, 127, 127, 127, 127, 127, 127, 127, 127}; // Array to hold smoothed values
 
 // Define key - initially set to C4 (Middle C)
 int key = 60;
@@ -183,7 +190,7 @@ void setup() {
   long elapsedTime = 0;
   while (elapsedTime < 1000) {
     for (int i = 0; i < 9; i++) {
-      int newThreshold = touchRead(pins[i]) * .9;
+      int newThreshold = touchRead(pins[i]) * sensitivity;
       if (newThreshold < thresholds[i]) thresholds[i] = newThreshold;
     }
     elapsedTime = millis() - startTime;
@@ -195,14 +202,18 @@ void setup() {
 
 
 void loop() {
+   // Read touch values, apply smoothing, store the current pressed state of buttons.
+  for (int i = 0; i < 9; i++) {
+    int currentReading = touchRead(pins[i]);
+    smoothedReading[i] = alpha * currentReading + (1 - alpha) * smoothedReading[i];
+    newState[i] = smoothedReading[i] < thresholds[i];
+  }
+
   // Action mode/scale change button if pressed
-  if (touchRead(pins[8]) < thresholds[8]) {
+  if (newState[8]) {
     buttonAction();
     return;
   }
-
-   // Read and store the current state of the pushbutton values
-  for (int i = 0; i < 8; i++) newState[i] = touchRead(pins[i]) < thresholds[i];
 
   // Check for key/scale/mode change combo button presses
   // Cycle through scales
@@ -215,7 +226,7 @@ void loop() {
   // Lower key by semitone
   else if (newState[0] && newState[1] && newState[2]) changeKey(key - 1);
 
-
+  // Play notes for pressed buttons
   else {
     for (int i = 0; i < 8; i++) {
       // No action required if sensor unchanged
@@ -226,7 +237,4 @@ void loop() {
       playOrEndNotes(i, newState[i]);
     }
   }
-  // Delay for debouncing
-  delay(20);
 }
-
