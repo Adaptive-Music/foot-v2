@@ -16,7 +16,7 @@ bool oldState[9] = {false};
 bool newState[9] = {false};
 
 // Vars for smoothing on touch input values
-const float alpha = 0.2; // Smoothing factor, between 0 (smoothest) and 1 (sharp changes)
+const float alpha = 0.1; // Smoothing factor, between 0 (smoothest) and 1 (sharp changes)
 float smoothedReading[9] = {127, 127, 127, 127, 127, 127, 127, 127, 127}; // Array to hold smoothed values
 
 // Define key - initially set to C4 (Middle C)
@@ -185,18 +185,24 @@ void buttonAction() {
 }
 
 void setup() {
+  Serial.begin(115200);
   // Calibrate touch sensors
   unsigned long startTime = millis();
   long elapsedTime = 0;
+  int cycleCount = 0;
   while (elapsedTime < 1000) {
     for (int i = 0; i < 9; i++) {
       int newThreshold = touchRead(pins[i]) * sensitivity;
       if (newThreshold < thresholds[i]) thresholds[i] = newThreshold;
     }
     elapsedTime = millis() - startTime;
+    cycleCount++;
   }
+  // Print calibration info
+  Serial.printf("Calibration cycle count: %d\nThresholds:\n", cycleCount);
+  for (int i = 0; i < 9; i++) Serial.printf("%d: %d, ", i, thresholds[i]);
+  Serial.println("\nStarting BLE server.");
 
-  Serial.begin(115200);
   BLEMidiServer.begin("Zoe's foot keyboard");
 }
 
