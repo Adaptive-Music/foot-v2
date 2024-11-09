@@ -9,15 +9,15 @@ int pins[] = {T6, T4, T5, T7, T8, T3, T2, T9, T0};
 int thresholds[9] = {127, 127, 127, 127, 127, 127, 127, 127, 127};
 
 // Sensitivity used to determine thresholds of sensor by multiplying by minimum ambient reading
-const float sensitivity = 0.9f;
+const float sensitivity = 0.8f;
 
 // Arrays to store sensor states
 bool oldState[9] = {false};
 bool newState[9] = {false};
 
 // Vars for smoothing on touch input values
-const float alpha = 0.1; // Smoothing factor, between 0 (smoothest) and 1 (sharp changes)
-float smoothedReading[9] = {127, 127, 127, 127, 127, 127, 127, 127, 127}; // Array to hold smoothed values
+const float alpha = 0.0005f; // Smoothing factor, between 0 (smoothest) and 1 (sharp changes)
+float smoothedReadings[9] = {127, 127, 127, 127, 127, 127, 127, 127, 127}; // Array to hold smoothed values
 
 // Define key - initially set to C4 (Middle C)
 int key = 60;
@@ -102,8 +102,14 @@ void playOrEndNotes(int i, bool noteOn) {
   }
   // Play or end each note
   for (int note : notes) {
-    if (noteOn) BLEMidiServer.noteOn(0, note, 127);
-    else BLEMidiServer.noteOff(0, note, 0);
+    if (noteOn) {
+      BLEMidiServer.noteOn(0, note, 127);
+      Serial.printf("Note on:  %d\n", note);
+    }
+    else {
+      BLEMidiServer.noteOff(0, note, 0);
+      Serial.printf("Note off: %d\n", note);
+    }
   } 
 }
 
@@ -211,8 +217,8 @@ void loop() {
    // Read touch values, apply smoothing, store the current pressed state of buttons.
   for (int i = 0; i < 9; i++) {
     int currentReading = touchRead(pins[i]);
-    smoothedReading[i] = alpha * currentReading + (1 - alpha) * smoothedReading[i];
-    newState[i] = smoothedReading[i] < thresholds[i];
+    smoothedReadings[i] = alpha * currentReading + (1 - alpha) * smoothedReadings[i];
+    newState[i] = smoothedReadings[i] < thresholds[i];
   }
 
   // Action mode/scale change button if pressed
